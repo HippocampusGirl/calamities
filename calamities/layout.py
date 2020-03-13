@@ -1,0 +1,97 @@
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+
+"""
+
+"""
+
+import curses
+
+from .view import View
+
+basePadSize = 2**10
+
+
+class Layout:
+    def __init__(self, app):
+        self.app = app
+        self.color = app.color
+        self.keyboard = app.keyboard
+
+        self.viewsById = {}
+        self.viewOrder = []
+        self.viewSizesById = {}
+        self.focusedView = None
+
+        self.viewportMin = 0
+
+        self.window = curses.newpad(basePadSize, basePadSize)
+        # self.window.leaveok(False)
+
+        self.statusBar = curses.newpad(1, basePadSize)
+        self.statusBar.bkgd(" ", self.color.black)
+
+        self.draw()
+
+    def append(self, view):
+        id = view.id
+        self.viewsById[id] = view
+        self.viewSizesById[id] = 0
+        self.viewOrder.append(id)
+        view.layout = self
+        self.focusedView = view
+        return view  # for chaining
+
+    def focus(self, view):
+        self.focusedView = view
+
+    def _calc_viewport(self, viewportSize):
+        if self.focusedView is None:
+            return
+
+        viewSize = self.getViewSize(self.focusedView)
+        viewMin = self.offset(self.focusedView)
+        if viewMin < self.viewportMin:
+            self.viewportMin = viewMin
+            return
+        viewMax = viewMin + viewSize
+        viewportMax = self.viewportMin + viewportSize
+        if viewMax > viewportMax:
+            self.viewportMin += viewMax - viewportMax
+
+    def getLayoutSize(self):
+        y, x = self.app.screen.getmaxyx()
+        return (y-1, x-1)
+
+    def draw(self):
+        y, x = self.getLayoutSize()
+        self._calc_viewport(y-1)
+        self.window.refresh(self.viewportMin, 0, 0, 0, y-2, x)
+        try:
+            self.statusBar.refresh(0, 0, y, 0, y, x)
+        except Exception:
+            pass
+
+    def getViewSize(self, view):
+        return self.viewSizesById[view.id]
+
+    def setViewSize(self, view, newSize):
+        if self.viewSizesById[view.id] != newSize:
+            self.viewSizesById[view.id] = newSize
+            index = self.viewOrder.index(view.id)
+            for dependentViewId in self.viewOrder[index+1:]:
+                self.viewsById[dependentViewId].draw()
+
+    def offset(self, view):
+        index = self.viewOrder.index(view.id)
+        return sum([
+            self.viewSizesById[id] for id in self.viewOrder[:index]
+        ])
+
+    def clearStatusBar(self):
+        self.statusBar.erase()
+
+    def setStatusBar(self, text):
+        self.clearStatusBar()
+        self.statusBar.addstr(0, 0, text)
