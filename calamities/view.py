@@ -12,6 +12,9 @@ import curses
 
 from .font import font
 from .cursor import Cursor
+from .text import (
+    TextElement, Text
+)
 longestReadableLineWidth = 100
 
 
