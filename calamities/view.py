@@ -111,10 +111,12 @@ class SpacerView(View):
 class TextView(View):
     def __init__(self, text, **kwargs):
         super(TextView, self).__init__(**kwargs)
+        if not isinstance(text, Text):
+            text = TextElement(text)
         self.text = text
 
     def drawAt(self, y):
-        self.layout.window.addstr(y, 0, self.text, self.color)
+        self.text.drawAt(y, 0, self.layout, self.color)
         if len(self.text) > self._viewWidth:
             self._viewWidth = len(self.text)
         return 1
