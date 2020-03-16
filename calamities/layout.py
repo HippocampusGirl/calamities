@@ -8,8 +8,6 @@
 
 import curses
 
-from .view import View
-
 basePadSize = 2**10
 
 
@@ -41,6 +39,16 @@ class Layout:
         self.viewOrder.append(id)
         view.layout = self
         self.focusedView = view
+        return view  # for chaining
+
+    def remove(self, view):
+        view.erase()
+        id = view.id
+        del self.viewsById[id]
+        del self.viewSizesById[id]
+        self.viewOrder.remove(id)
+        if self.focusedView == view:
+            self.focusedView = None
         return view  # for chaining
 
     def focus(self, view):
