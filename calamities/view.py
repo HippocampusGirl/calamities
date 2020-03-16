@@ -24,6 +24,7 @@ class View:
         self.color = color
         self.emphasisColor = emphasisColor
         self.highlightColor = highlightColor
+        self._viewWidth = 100
 
     def __repr__(self):
         return f"View[id={self.id}]"
@@ -42,9 +43,12 @@ class View:
         raise NotImplementedError
 
     def draw(self):
-        y = self.layout.offset(self)
-        size = self.drawAt(y)
-        self._setViewSize(size)
+        try:
+            y = self.layout.offset(self)
+            size = self.drawAt(y)
+            self._setViewSize(size)
+        except ValueError:
+            pass  # view was removed
 
     def update(self):
         self.layout.app.dispatch(self.draw)
@@ -86,7 +90,7 @@ class View:
         )
 
     def _getViewWidth(self):
-        raise NotImplementedError
+        return self._viewWidth
 
     def _getViewSize(self):
         return self.layout.getViewSize(self)
@@ -111,6 +115,8 @@ class TextView(View):
 
     def drawAt(self, y):
         self.layout.window.addstr(y, 0, self.text, self.color)
+        if len(self.text) > self._viewWidth:
+            self._viewWidth = len(self.text)
         return 1
 
 
@@ -128,6 +134,8 @@ class GiantTextView(View):
                     attr |= curses.A_REVERSE
                 self.layout.window.addch(y+i, j * 2 + 0, " ", attr)
                 self.layout.window.addch(y+i, j * 2 + 1, " ", attr)
+        if binarray.shape[1] > self._viewWidth:
+            self._viewWidth = binarray.shape[1]
         return binarray.shape[0]
 
 
@@ -136,7 +144,7 @@ class CallableView(View):
         super(CallableView, self).__init__(**kwargs)
         self.isActive = False
 
-    def __call__(self, cntxt):
+    def __call__(self):
         self._before_call()
         self.focus()
 

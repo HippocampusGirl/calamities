@@ -98,7 +98,7 @@ class SingleChoiceInputView(CallableView):
 
     def _getOutput(self):
         if self.cur_index is not None:
-            return self.options[self.cur_index]
+            return str(self.options[self.cur_index])
 
     def _drawAt_horizontal(self, y):
         y = self.layout.offset(self)

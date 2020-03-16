@@ -122,6 +122,9 @@ class TextInputView(CallableView):
         if curLength is not None:
             self.previousLength = x
 
+        if x > self._viewWidth:
+            self._viewWidth = x
+
         return 1
 
 
