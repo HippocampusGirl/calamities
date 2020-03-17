@@ -165,8 +165,6 @@ class DirectoryInputView(FileInputView):
 
             try:
                 real_dir = resolve(self.cur_dir)
-                self.layout.window.addstr(10, 0, real_dir)
-                self.layout.window.addstr(10, 0, " "*100)
                 with os.scandir(real_dir) as it:
                     for entry in it:
                         try:
