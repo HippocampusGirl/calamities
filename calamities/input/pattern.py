@@ -19,6 +19,7 @@ from .choice import SingleChoiceInputView
 from ..text import (
     TextElement, TextElementCollection
 )
+from ..file import fake_to_real_path
 
 _tokenize0 = re.compile(r"([^\\])({|})")
 _tokenize1 = re.compile(r"(\A|[^\\])({[a-z]+})")
@@ -263,6 +264,7 @@ class FilePatternInputView(CallableView):
                 pathname = op.join(os.curdir, pathname)
 
         newpathname = pathname + "{suggestion}"
+        newpathname = fake_to_real_path(newpathname)
         entityglobres = entity_glob(
             newpathname, self.entities + ["suggestion"], self.dironly)
 

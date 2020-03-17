@@ -28,6 +28,9 @@ from .input import (
     FilePatternInputView
 )
 from .layout import Layout
+from .file import (
+    fs_root
+)
 
 __all__ = [
     App,

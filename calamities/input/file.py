@@ -12,6 +12,10 @@ from ..keyboard import Key
 from ..view import CallableView
 from .text import TextInputView
 from .choice import SingleChoiceInputView
+from ..file import (
+    get_dir,
+    fake_to_real_path
+)
 
 
 class FileInputView(CallableView):
@@ -57,18 +61,14 @@ class FileInputView(CallableView):
         return self.text
 
     def _scan_dir(self):
-        if self.text is None:
-            dir = os.curdir
-        else:
-            dir = op.dirname(self.text)
-        if len(dir) == 0:
-            dir = os.curdir
+        dir = get_dir(self.text)
         if dir != self.cur_dir:
             self.cur_dir = dir
             self.cur_dir_files = []
 
             try:
-                with os.scandir(self.cur_dir) as it:
+                real_dir = fake_to_real_path(self.cur_dir)
+                with os.scandir(real_dir) as it:
                     for entry in it:
                         try:
                             filepath = entry.name
@@ -158,18 +158,14 @@ class DirectoryInputView(FileInputView):
         return op.isdir(self.text)
 
     def _scan_dir(self):
-        if self.text is None:
-            dir = os.curdir
-        else:
-            dir = op.dirname(self.text)
-        if len(dir) == 0:
-            dir = os.curdir
+        dir = get_dir(self.text)
         if dir != self.cur_dir:
             self.cur_dir = dir
             self.cur_dir_files = []
 
             try:
-                with os.scandir(self.cur_dir) as it:
+                real_dir = fake_to_real_path(self.cur_dir)
+                with os.scandir(real_dir) as it:
                     for entry in it:
                         try:
                             filepath = entry.name
