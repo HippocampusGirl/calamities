@@ -14,7 +14,7 @@ from .text import TextInputView
 from .choice import SingleChoiceInputView
 from ..file import (
     get_dir,
-    fake_to_real_path
+    resolve
 )
 
 
@@ -67,7 +67,7 @@ class FileInputView(CallableView):
             self.cur_dir_files = []
 
             try:
-                real_dir = fake_to_real_path(self.cur_dir)
+                real_dir = resolve(self.cur_dir)
                 with os.scandir(real_dir) as it:
                     for entry in it:
                         try:
@@ -164,7 +164,9 @@ class DirectoryInputView(FileInputView):
             self.cur_dir_files = []
 
             try:
-                real_dir = fake_to_real_path(self.cur_dir)
+                real_dir = resolve(self.cur_dir)
+                self.layout.window.addstr(10, 0, real_dir)
+                self.layout.window.addstr(10, 0, " "*100)
                 with os.scandir(real_dir) as it:
                     for entry in it:
                         try:
