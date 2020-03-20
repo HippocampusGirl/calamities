@@ -27,13 +27,15 @@ class Color:
 
         self.white = curses.color_pair(2) | curses.A_REVERSE
 
+        self.idefault = curses.color_pair(1) | curses.A_REVERSE
+
         self.iblue = curses.color_pair(3) | curses.A_REVERSE
         self.igreen = curses.color_pair(4) | curses.A_REVERSE
         self.imagenta = curses.color_pair(5) | curses.A_REVERSE
         self.ired = curses.color_pair(6) | curses.A_REVERSE
         self.icyan = curses.color_pair(7) | curses.A_REVERSE
 
-        self.palette = [self.ired, self.iblue, self.igreen,
+        self.palette = [self.ired, self.igreen,
                         self.imagenta, self.icyan]
 
     def from_string(self, str):

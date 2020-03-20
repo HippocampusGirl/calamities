@@ -19,7 +19,7 @@ from ..file import (
 
 
 class FileInputView(CallableView):
-    def __init__(self, base_path=None, **kwargs):
+    def __init__(self, base_path=None, exists=True, **kwargs):
         super(FileInputView, self).__init__(**kwargs)
         self.text_input_view = TextInputView(base_path)
         self.text_input_view.update = self.update
@@ -30,6 +30,7 @@ class FileInputView(CallableView):
         self.matching_files = []
         self.cur_dir = None
         self.cur_dir_files = []
+        self.exists = exists
 
     @property
     def text(self):
@@ -52,13 +53,18 @@ class FileInputView(CallableView):
         self._scan_files()
 
     def _isOk(self):
-        try:
-            return op.isfile(self.text)
-        except Exception:
-            return False
+        if self.exists:
+            try:
+                return op.isfile(resolve(self.text))
+            except Exception:
+                return False
+        return True
 
     def _getOutput(self):
-        return self.text
+        try:
+            return resolve(self.text)
+        except Exception:
+            pass
 
     def _scan_dir(self):
         dir = get_dir(self.text)
@@ -155,7 +161,12 @@ class FileInputView(CallableView):
 
 class DirectoryInputView(FileInputView):
     def _isOk(self):
-        return op.isdir(self.text)
+        if self.exists:
+            try:
+                return op.isdir(resolve(self.text))
+            except Exception:
+                return False
+        return True
 
     def _scan_dir(self):
         dir = get_dir(self.text)

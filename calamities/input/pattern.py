@@ -21,14 +21,15 @@ from ..text import (
 )
 from ..file import resolve
 
-_tokenize0 = re.compile(r"([^\\])({|})")
-_tokenize1 = re.compile(r"(\A|[^\\])({[a-z]+})")
+_tokenize0 = re.compile(r"(\A|[^\\])({)([a-z]+)(?:(:)(.+))?(})")
+_tokenize1 = re.compile(r"(\A|[^\\])({[a-z]+(?::(?:[^{}]|\\{|\\})+)?})")
 _entity_parse = re.compile(r"{(?P<entity_name>[a-z]+)(:(?P<filter>.+))?}")
 _magic_check = re.compile(r"([*?{}])")
 _recursive_check = re.compile(r"\*\*")
 _special_match = re.compile(r"(\\[AbBdDsDwWZ])")
 _suggestion_match = re.compile(r"({suggestion})")
 _show_entity_suggestion_check = re.compile(r".*(?P<newentity>{[^}]*)\Z")
+_remove_entity_remainder_match = re.compile(r"(?P<oldentity>[^{]*})")
 
 p = inflect.engine()
 
@@ -197,21 +198,23 @@ class FilePatternInputView(CallableView):
         if addBrackets:
             text = f"[{text}]"
         tokens = _tokenize0.split(text)
-        entity = None
+        tokens = [token for token in tokens if token is not None]
         retval = []
-        for token in tokens:
+        for i, token in enumerate(tokens):
             if token == "{":
-                retval.append(TextElement(token))
-                entity = ""
+                text_elem = TextElement(token)
+                color = None
+                if i+1 < len(tokens):
+                    entity = tokens[i+1]
+                    if entity in self.color_by_entity:
+                        color = self.color_by_entity[entity]
+                if color is None:
+                    color = self.highlightColor
+                text_elem.color = color
+                retval.append(text_elem)
             elif token == "}" and len(retval) > 0:
                 retval[-1].value += token
-                if entity in self.color_by_entity:
-                    retval[-1].color = self.color_by_entity[entity]
-                entity = None
                 retval.append(TextElement(""))
-            elif entity is not None and len(retval) > 0:
-                retval[-1].value += token
-                entity += token
             elif len(retval) > 0:
                 retval[-1].value += token
             else:
@@ -342,10 +345,15 @@ class FilePatternInputView(CallableView):
                         text[:cur_index])
                     if matchobj is not None:
                         start, end = matchobj.span("newentity")
-                        self.text = text[:start] + \
-                            selection + \
-                            text[cur_index:]
-                        self.text_input_view.cur_index = start + len(selection)
+                        newtext = text[:start]
+                        newtext += selection
+                        self.text_input_view.cur_index = len(newtext)
+                        matchobj = _remove_entity_remainder_match.match(
+                            text[cur_index:])
+                        if matchobj is not None:
+                            cur_index += matchobj.end("oldentity")
+                        newtext += text[cur_index:]
+                        self.text = newtext
                 else:
                     self.text = op.join(
                         op.dirname(text),
