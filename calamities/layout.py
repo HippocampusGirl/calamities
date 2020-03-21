@@ -82,7 +82,8 @@ class Layout:
             pass
 
     def getViewSize(self, view):
-        return self.viewSizesById[view.id]
+        if view.id in self.viewSizesById:
+            return self.viewSizesById[view.id]
 
     def setViewSize(self, view, newSize):
         if self.viewSizesById[view.id] != newSize:

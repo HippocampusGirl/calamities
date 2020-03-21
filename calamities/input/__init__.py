@@ -8,22 +8,30 @@ from .choice import (
     SingleChoiceInputView,
     MultipleChoiceInputView,
     MultiSingleChoiceInputView,
-    MultiMultipleChoiceInputView
+    MultiMultipleChoiceInputView,
 )
 from .text import (
     TextInputView,
-    NumberInputView
+    NumberInputView,
+    MultiTextInputView,
+    MultiNumberInputView,
 )
-from .file import (
-    FileInputView,
-    DirectoryInputView
-)
-from .pattern import FilePatternInputView
+from .file import FileInputView, DirectoryInputView
+from .pattern import FilePatternInputView, tag_glob, has_magic, get_entities_in_path
 
 __all__ = [
-    SingleChoiceInputView, MultipleChoiceInputView,
-    MultiSingleChoiceInputView, MultiMultipleChoiceInputView,
-    TextInputView, NumberInputView,
-    FileInputView, DirectoryInputView,
-    FilePatternInputView
+    SingleChoiceInputView,
+    MultipleChoiceInputView,
+    MultiSingleChoiceInputView,
+    MultiMultipleChoiceInputView,
+    TextInputView,
+    NumberInputView,
+    MultiTextInputView,
+    MultiNumberInputView,
+    FileInputView,
+    DirectoryInputView,
+    FilePatternInputView,
+    tag_glob,
+    has_magic,
+    get_entities_in_path,
 ]

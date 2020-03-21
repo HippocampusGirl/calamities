@@ -52,7 +52,7 @@ class FileInputView(CallableView):
         self.text_input_view.isActive = True
         self._scan_files()
 
-    def _isOk(self):
+    def _is_ok(self):
         if self.exists:
             try:
                 return op.isfile(resolve(self.text))
@@ -139,7 +139,7 @@ class FileInputView(CallableView):
                 self.suggestion_view._before_call()
                 self.update()
             elif c == Key.Return:
-                if self._isOk():
+                if self._is_ok():
                     self.suggestion_view.set_options([])
                     self.suggestion_view.isActive = False
                     self.text_input_view.isActive = False
@@ -160,7 +160,7 @@ class FileInputView(CallableView):
 
 
 class DirectoryInputView(FileInputView):
-    def _isOk(self):
+    def _is_ok(self):
         if self.exists:
             try:
                 return op.isdir(resolve(self.text))
