@@ -12,19 +12,17 @@ from ..keyboard import Key
 from ..view import CallableView
 from .text import TextInputView
 from .choice import SingleChoiceInputView
-from ..file import (
-    get_dir,
-    resolve
-)
+from ..file import get_dir, resolve
 
 
 class FileInputView(CallableView):
-    def __init__(self, base_path=None, exists=True, **kwargs):
+    def __init__(self, base_path=None, exists=True, messagefun=None, **kwargs):
         super(FileInputView, self).__init__(**kwargs)
-        self.text_input_view = TextInputView(base_path)
+        self.text_input_view = TextInputView(base_path, messagefun=messagefun)
         self.text_input_view.update = self.update
         self.suggestion_view = SingleChoiceInputView(
-            [], isVertical=True, addBrackets=False)
+            [], isVertical=True, addBrackets=False
+        )
         self.suggestion_view.update = self.update
 
         self.matching_files = []
@@ -106,8 +104,9 @@ class FileInputView(CallableView):
             self.text = None
             self.suggestion_view.set_options([])
             self.isActive = False
-        elif self.suggestion_view.isActive and \
-                self.suggestion_view.cur_index is not None:
+        elif (
+            self.suggestion_view.isActive and self.suggestion_view.cur_index is not None
+        ):
             if c == Key.Up and self.suggestion_view.cur_index == 0:
                 self.suggestion_view.offset = 0
                 self.suggestion_view.cur_index = None
@@ -117,8 +116,8 @@ class FileInputView(CallableView):
                 self.update()
             elif c == Key.Return or c == Key.Right:
                 self.text = op.join(
-                    op.dirname(str(self.text)),
-                    str(self.suggestion_view._getOutput()))
+                    op.dirname(str(self.text)), str(self.suggestion_view._getOutput())
+                )
                 self._scan_files()
                 self.suggestion_view.cur_index = None
                 self.suggestion_view.isActive = False
@@ -153,9 +152,11 @@ class FileInputView(CallableView):
                     self.update()
 
     def drawAt(self, y):
+        if y is None:
+            return
         size = 0
-        size += self.text_input_view.drawAt(y+size)
-        size += self.suggestion_view.drawAt(y+size)
+        size += self.text_input_view.drawAt(y + size)
+        size += self.suggestion_view.drawAt(y + size)
         return size
 
 

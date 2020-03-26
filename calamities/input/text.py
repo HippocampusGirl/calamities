@@ -94,6 +94,8 @@ class TextInputView(CallableView):
         return self.text
 
     def drawAt(self, y, x=0):
+        if y is None:
+            return
         curLength = None
         if self.text is not None:
             text = self.tokenizefun(self.text)
@@ -116,8 +118,9 @@ class TextInputView(CallableView):
 
         if self.messagefun is not None:
             message = self.messagefun()
-            x += 1
-            x += message.drawAt(y, x, self.layout)
+            if message is not None:
+                x += 1
+                x += message.drawAt(y, x, self.layout)
 
         if curLength is not None:
             self.previousLength = x
@@ -144,36 +147,46 @@ class NumberInputView(TextInputView):
             return False
 
     def _handleKey(self, c):
-        if isinstance(c, Key) or chr(c) in "0123456789.e":
+        if isinstance(c, Key) or chr(c) in "0123456789.e-":
             super(NumberInputView, self)._handleKey(c)
 
     def _getOutput(self):
-        return float(self.text)
+        if self.text is not None:
+            return float(self.text)
 
 
 class MultiTextInputView(SingleChoiceInputView):
     text_input_type = TextInputView
 
-    def __init__(self, options, textlist=None, **kwargs):
+    def __init__(self, options, initial_values=None, **kwargs):
+        super_kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k in {"color", "emphasisColor", "highlightColor"}
+        }
         super(MultiTextInputView, self).__init__(
             options,
             isVertical=True,
             addBrackets=False,
             showSelectionAfterExit=False,
-            **kwargs,
+            **super_kwargs,
         )
         self.selectedIndices = None
         self.optionWidth = max(len(option) for option in options)
 
-        if textlist is None:
-            textlist = [None] * len(options)
-        kwargs = dict(nchr_prepend=self.optionWidth + 1 + 1, tokenizefun=_tokenize)
+        if initial_values is None:
+            initial_values = [None] * len(options)
+        kwargs.update(
+            dict(nchr_prepend=self.optionWidth + 1 + 1, tokenizefun=_tokenize)
+        )
         self.children = [
             self.text_input_type(**kwargs)
-            if text is None
-            else self.text_input_type(text, **kwargs)
-            for text in textlist
+            if val is None
+            else self.text_input_type(val, **kwargs)
+            for val in initial_values
         ]
+        for child in self.children:
+            child.update = self.update
 
     def setup(self):
         super(MultiTextInputView, self).setup()
@@ -219,7 +232,7 @@ class MultiTextInputView(SingleChoiceInputView):
 
     def _getOutput(self):
         return {
-            str(option): str(child.text)
+            str(option): child._getOutput()
             for option, child in zip(self.options, self.children)
         }
 

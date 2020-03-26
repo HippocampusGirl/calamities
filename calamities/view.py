@@ -12,9 +12,8 @@ import curses
 
 from .font import font
 from .cursor import Cursor
-from .text import (
-    TextElement, Text
-)
+from .text import TextElement, Text
+
 longestReadableLineWidth = 100
 
 
@@ -69,14 +68,14 @@ class View:
     def eraseAt(self, y):
         nothing = " " * self._getViewWidth()
         for i in range(self._getViewSize()):
-            self.layout.window.addstr(
-                y+i, 0, nothing, self.layout.color.default)
+            self.layout.window.addstr(y + i, 0, nothing, self.layout.color.default)
         return 0
 
     def erase(self):
         y = self.layout.offset(self)
-        size = self.eraseAt(y)
-        self._setViewSize(size)
+        if y is not None:
+            size = self.eraseAt(y)
+            self._setViewSize(size)
 
     def _showCursor(self):
         self.layout.app.dispatch(Cursor.show)
@@ -88,9 +87,7 @@ class View:
         self.layout.app.dispatch(self.layout.clearStatusBar)
 
     def _setStatusBar(self, text):
-        self.layout.app.dispatch(
-            functools.partial(self.layout.setStatusBar, text)
-        )
+        self.layout.app.dispatch(functools.partial(self.layout.setStatusBar, text))
 
     def _getViewWidth(self):
         return self._viewWidth
@@ -108,6 +105,8 @@ class SpacerView(View):
         self.n = n
 
     def drawAt(self, y):
+        nothing = " " * 256
+        self.layout.window.addstr(y, 0, nothing, self.layout.color.default)
         return self.n
 
 
@@ -137,8 +136,8 @@ class GiantTextView(View):
                 attr = self.color
                 if binarray[i, j]:
                     attr |= curses.A_REVERSE
-                self.layout.window.addch(y+i, j * 2 + 0, " ", attr)
-                self.layout.window.addch(y+i, j * 2 + 1, " ", attr)
+                self.layout.window.addch(y + i, j * 2 + 0, " ", attr)
+                self.layout.window.addch(y + i, j * 2 + 1, " ", attr)
         if binarray.shape[1] > self._viewWidth:
             self._viewWidth = binarray.shape[1]
         return binarray.shape[0]

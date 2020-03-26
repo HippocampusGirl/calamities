@@ -8,7 +8,7 @@
 
 import curses
 
-basePadSize = 2**10
+basePadSize = 2 ** 10
 
 
 class Layout:
@@ -44,8 +44,10 @@ class Layout:
     def remove(self, view):
         view.erase()
         id = view.id
-        del self.viewsById[id]
-        del self.viewSizesById[id]
+        if id in self.viewsById:
+            del self.viewsById[id]
+        if id in self.viewSizesById:
+            del self.viewSizesById[id]
         self.viewOrder.remove(id)
         if self.focusedView == view:
             self.focusedView = None
@@ -60,6 +62,8 @@ class Layout:
 
         viewSize = self.getViewSize(self.focusedView)
         viewMin = self.offset(self.focusedView)
+        if viewSize is None or viewMin is None:
+            return
         if viewMin < self.viewportMin:
             self.viewportMin = viewMin
             return
@@ -70,12 +74,12 @@ class Layout:
 
     def getLayoutSize(self):
         y, x = self.app.screen.getmaxyx()
-        return (y-1, x-1)
+        return (y - 1, x - 1)
 
     def draw(self):
         y, x = self.getLayoutSize()
-        self._calc_viewport(y-1)
-        self.window.refresh(self.viewportMin, 0, 0, 0, y-2, x)
+        self._calc_viewport(y - 1)
+        self.window.refresh(self.viewportMin, 0, 0, 0, y - 2, x)
         try:
             self.statusBar.refresh(0, 0, y, 0, y, x)
         except Exception:
@@ -86,17 +90,20 @@ class Layout:
             return self.viewSizesById[view.id]
 
     def setViewSize(self, view, newSize):
+        if view.id not in self.viewSizesById or newSize is None:
+            return
         if self.viewSizesById[view.id] != newSize:
             self.viewSizesById[view.id] = newSize
             index = self.viewOrder.index(view.id)
-            for dependentViewId in self.viewOrder[index+1:]:
+            for dependentViewId in self.viewOrder[index + 1 :]:
                 self.viewsById[dependentViewId].draw()
 
     def offset(self, view):
-        index = self.viewOrder.index(view.id)
-        return sum([
-            self.viewSizesById[id] for id in self.viewOrder[:index]
-        ])
+        try:
+            index = self.viewOrder.index(view.id)
+            return sum([self.viewSizesById[id] for id in self.viewOrder[:index]])
+        except ValueError:
+            return
 
     def clearStatusBar(self):
         self.statusBar.erase()

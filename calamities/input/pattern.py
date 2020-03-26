@@ -16,7 +16,7 @@ from ..keyboard import Key
 from ..view import CallableView
 from .text import TextInputView
 from .choice import SingleChoiceInputView
-from ..text import TextElement, TextElementCollection
+from ..text import TextElement, TextElementCollection, Text
 from ..file import resolve
 
 _tokenize0 = re.compile(r"(\A|[^\\])({)([a-z]+)(?:(:)(.+))?(})")
@@ -26,6 +26,7 @@ _magic_check = re.compile(r"(?:\*|\?|(?:\A|[^\\]){|[^\\]})")
 _recursive_check = re.compile(r"\*\*")
 _special_match = re.compile(r"(\\[AbBdDsDwWZ])")
 _suggestion_match = re.compile(r"({suggestion})")
+_chartype_filter = re.compile(r"(\[.+\])")
 _show_tag_suggestion_check = re.compile(r".*(?P<newtag>{[^}]*)\Z")
 _remove_tag_remainder_match = re.compile(r"(?P<oldtag>[^{]*})")
 
@@ -101,8 +102,11 @@ def _translate(pat, entities):
                 enre = r".*"
                 filter = matchobj.group("filter")
                 if filter is not None:
-                    enre = fnmatch.translate(filter)
-                    enre = _special_match.sub("", enre)
+                    if _chartype_filter.fullmatch(filter) is not None:
+                        enre = f"{filter}+"  # [allowed characters] syntax
+                    else:  # glob syntax
+                        enre = fnmatch.translate(filter)
+                        enre = _special_match.sub("", enre)
                 res += r"(?P<%s>%s)" % (tag_name, enre)
             else:
                 res += re.escape(token)
@@ -163,7 +167,7 @@ class FilePatternInputView(CallableView):
         self,
         entities,
         required_entities=[],
-        tag_colors=["red", "green", "magenta", "cyan"],
+        entity_colors_list=["ired", "igreen", "imagenta", "icyan", "iyellow"],
         dironly=False,
         base_path=None,
         **kwargs,
@@ -182,6 +186,7 @@ class FilePatternInputView(CallableView):
         self.suggestion_view.update = self.update
 
         self.message = TextElement("")
+        self.message_is_dirty = False
 
         self.matching_files = []
         self.cur_dir = None
@@ -191,7 +196,7 @@ class FilePatternInputView(CallableView):
 
         self.entities = entities
         self.required_entities = required_entities
-        self.tag_colors = tag_colors
+        self.entity_colors_list = entity_colors_list
         self.color_by_tag = None
         self.tag_suggestions = None
         self.is_suggesting_entities = False
@@ -203,6 +208,13 @@ class FilePatternInputView(CallableView):
     @text.setter
     def text(self, val):
         self.text_input_view.text = val
+
+    def show_message(self, msg):
+        if isinstance(msg, Text):
+            self.message = msg
+        else:
+            self.message = self._tokenize(msg, addBrackets=False)
+        self.message_is_dirty = True
 
     def _suggest_entities(self):
         self.is_suggesting_entities = True
@@ -250,7 +262,7 @@ class FilePatternInputView(CallableView):
         self.suggestion_view.setup()
         self.color_by_tag = {
             ent: self.layout.color.from_string(color_str)
-            for ent, color_str in zip(self.entities, self.tag_colors)
+            for ent, color_str in zip(self.entities, self.entity_colors_list)
         }
         self.tag_suggestions = [
             TextElement(f"{{{ent}}}", color=self.color_by_tag[ent])
@@ -320,23 +332,42 @@ class FilePatternInputView(CallableView):
 
         nfile = len(filepaths)
 
-        self.message.color = self.layout.color.iblue
-        self.message.value = p.inflect(f"Found {nfile} plural('file', {nfile})")
+        has_all_required_entities = all(
+            entity in tagsetdict for entity in self.required_entities
+        )
 
-        if len(tagsetdict) > 0:
-            self.message.value += " "
-            self.message.value += "for"
-            self.message.value += " "
-            tagmessages = [
-                p.inflect(f"{len(v)} plural('{k}', {len(v)})")
-                for k, v in tagsetdict.items()
-            ]
-            self.message.value += p.join(tagmessages)
+        if not self.message_is_dirty:
+            if has_all_required_entities:
+                self.message.color = self.layout.color.iblue
+                self.message.value = p.inflect(f"Found {nfile} plural('file', {nfile})")
 
-        self.is_ok = False
-        if nfile > 0:
-            if all(entity in tagsetdict for entity in self.required_entities):
-                self.is_ok = True
+                if len(tagsetdict) > 0:
+                    self.message.value += " "
+                    self.message.value += "for"
+                    self.message.value += " "
+                    tagmessages = [
+                        p.inflect(f"{len(v)} plural('{k}', {len(v)})")
+                        for k, v in tagsetdict.items()
+                    ]
+                    self.message.value += p.join(tagmessages)
+            else:
+                self.message.color = self.layout.color.iblue
+                self.message.value = "Missing"
+                self.message.value += " "
+                self.message.value += p.join(
+                    [
+                        f"{{{entity}}}"
+                        for entity in self.required_entities
+                        if entity not in tagsetdict
+                    ]
+                )
+
+        self.message_is_dirty = False
+
+        if nfile > 0 and has_all_required_entities:
+            self.is_ok = True
+        else:
+            self.is_ok = False
 
         self.matching_files = [
             self._tokenize(s, addBrackets=False) for s in new_suggestions
@@ -377,6 +408,7 @@ class FilePatternInputView(CallableView):
                 else:
                     self.text = op.join(op.dirname(text), selection)
                     self.text_input_view.cur_index = len(self.text)
+                self.message_is_dirty = False
                 self._scan_files()
                 self.suggestion_view.cur_index = None
                 self.suggestion_view.isActive = False
@@ -411,11 +443,13 @@ class FilePatternInputView(CallableView):
                     self.text is not None and self.text != cur_text
                 ) or cur_index != self.text_input_view.cur_index:
                     # was changed
+                    self.message_is_dirty = False
                     self._scan_files()
                     self.update()
 
     def drawAt(self, y):
-        size = 0
-        size += self.text_input_view.drawAt(y + size)
-        size += self.suggestion_view.drawAt(y + size)
-        return size
+        if y is not None:
+            size = 0
+            size += self.text_input_view.drawAt(y + size)
+            size += self.suggestion_view.drawAt(y + size)
+            return size

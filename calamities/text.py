@@ -42,12 +42,15 @@ class TextElement(Text):
         for c in self.value:
             yield c, self.color
 
-    def drawAt(self, y, x, layout,
-               color=None, overridecolor=False, renderfun=None):
+    def drawAt(self, y, x, layout, color=None, overridecolor=False, renderfun=None):
+        if y is None or x is None or layout is None:
+            return
         if self.color is not None and not overridecolor:
             color = self.color
         elif color is None:
             color = layout.color.default
+        if isinstance(color, str):
+            color = layout.color.from_string(color)
         value = self.value
         if renderfun is not None:
             value = renderfun(value)
@@ -56,7 +59,7 @@ class TextElement(Text):
 
 
 class TextElementCollection(Text):
-    def __init__(self, textElements):
+    def __init__(self, textElements=[]):
         self.textElements = textElements
 
     def __len__(self):
@@ -73,10 +76,9 @@ class TextElementCollection(Text):
             for tup in el:
                 yield tup
 
-    def drawAt(self, y, x, layout,
-               color=None, overridecolor=False, renderfun=None):
+    def drawAt(self, y, x, layout, color=None, overridecolor=False, renderfun=None):
         size = 0
         for el in self.textElements:
-            el.drawAt(y, x+size, layout, color, overridecolor, renderfun)
+            el.drawAt(y, x + size, layout, color, overridecolor, renderfun)
             size += len(el)
         return size

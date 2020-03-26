@@ -26,6 +26,7 @@ from .input import (
     get_entities_in_path,
 )
 from .layout import Layout
+from .text import Text, TextElement, TextElementCollection
 
 __all__ = [
     App,
@@ -50,4 +51,7 @@ __all__ = [
     has_magic,
     get_entities_in_path,
     Layout,
+    Text,
+    TextElement,
+    TextElementCollection,
 ]
