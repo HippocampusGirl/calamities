@@ -175,15 +175,10 @@ class FilePatternInputView(CallableView):
     ):
         super(FilePatternInputView, self).__init__(**kwargs)
         self.text_input_view = TextInputView(
-            base_path,
-            tokenizefun=self._tokenize,
-            nchr_prepend=1,
-            messagefun=self._messagefun,
+            base_path, tokenizefun=self._tokenize, nchr_prepend=1, messagefun=self._messagefun,
         )
         self.text_input_view.update = self.update
-        self.suggestion_view = SingleChoiceInputView(
-            [], isVertical=True, addBrackets=False
-        )
+        self.suggestion_view = SingleChoiceInputView([], isVertical=True, addBrackets=False)
         self.suggestion_view.update = self.update
 
         self.message = TextElement("")
@@ -266,8 +261,7 @@ class FilePatternInputView(CallableView):
             for ent, color_str in zip(self.entities, self.entity_colors_list)
         }
         self.tag_suggestions = [
-            TextElement(f"{{{ent}}}", color=self.color_by_tag[ent])
-            for ent in self.entities
+            TextElement(f"{{{ent}}}", color=self.color_by_tag[ent]) for ent in self.entities
         ]
 
     def _before_call(self):
@@ -279,7 +273,8 @@ class FilePatternInputView(CallableView):
         return self.is_ok
 
     def _getOutput(self):
-        return self.text
+        if self.text is not None:
+            return resolve(self.text)
 
     def _scan_files(self):
         if self.text is not None:
@@ -370,9 +365,7 @@ class FilePatternInputView(CallableView):
         else:
             self.is_ok = False
 
-        self.matching_files = [
-            self._tokenize(s, addBrackets=False) for s in new_suggestions
-        ]
+        self.matching_files = [self._tokenize(s, addBrackets=False) for s in new_suggestions]
         self._suggest_matches()
 
     def _handleKey(self, c):
@@ -380,9 +373,7 @@ class FilePatternInputView(CallableView):
             self.text = None
             self.suggestion_view.set_options([])
             self.isActive = False
-        elif (
-            self.suggestion_view.isActive and self.suggestion_view.cur_index is not None
-        ):
+        elif self.suggestion_view.isActive and self.suggestion_view.cur_index is not None:
             if c == Key.Up and self.suggestion_view.cur_index == 0:
                 self.suggestion_view.offset = 0
                 self.suggestion_view.cur_index = None
@@ -423,9 +414,7 @@ class FilePatternInputView(CallableView):
             else:
                 self.suggestion_view._handleKey(c)
         else:
-            if c == Key.Down and (
-                self.is_suggesting_entities or len(self.matching_files) > 0
-            ):
+            if c == Key.Down and (self.is_suggesting_entities or len(self.matching_files) > 0):
                 self.suggestion_view.isActive = True
                 self.text_input_view.isActive = False
                 self.suggestion_view._before_call()

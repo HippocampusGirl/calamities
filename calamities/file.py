@@ -4,7 +4,6 @@
 
 import os
 from os import path as op
-import re
 
 from .config import config
 
