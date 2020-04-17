@@ -10,6 +10,8 @@ import curses.ascii
 import enum
 import queue
 
+import sys
+
 
 class Key(enum.Enum):
     Break = "break"
@@ -28,8 +30,10 @@ class Keyboard:
         self.state = ""
 
     def __call__(self, c):
-        if c == curses.ascii.ETX or c == curses.ascii.EOT:  # ctrl-c or ctrl-d
+        if c == curses.ascii.ETX:  # ctrl-c
             self.queue.put_nowait(Key.Break)
+        elif c == curses.ascii.EOT:  # ctrl-d
+            sys.exit(0)
         elif c == curses.ascii.NL or c == curses.ascii.CR:
             self.queue.put_nowait(Key.Return)
         elif c == curses.KEY_UP:

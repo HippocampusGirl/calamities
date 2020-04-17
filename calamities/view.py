@@ -35,10 +35,10 @@ class View:
         # cannot do this in constructor, as curses may not be initialized yet
         if self.color is None:
             self.color = self.layout.color.black
-        if self.emphasisColor is None:
-            self.emphasisColor = self.layout.color.white
         if self.highlightColor is None:
-            self.highlightColor = self.layout.color.iblue
+            self.highlightColor = self.layout.color.white
+        if self.emphasisColor is None:
+            self.emphasisColor = self.layout.color.iblue
         self.emphasisColor |= curses.A_BOLD
 
     def drawAt(self):
@@ -47,6 +47,8 @@ class View:
     def draw(self):
         try:
             y = self.layout.offset(self)
+            if y is None:
+                return
             size = self.drawAt(y)
             self._setViewSize(size)
         except ValueError:

@@ -48,9 +48,7 @@ class TextInputView(CallableView):
     def _before_call(self):
         if self.text is None:
             self.text = ""
-        self._setStatusBar(
-            "  ".join(["[↵] Ok", "[← →] Move cursor", "[ctrl-c] Cancel"])
-        )
+        self._setStatusBar("  ".join(["[↵] Ok", "[← →] Move cursor", "[ctrl-c] Cancel"]))
 
     def _is_ok(self):
         return True
@@ -70,23 +68,17 @@ class TextInputView(CallableView):
             self.update()
         elif c == Key.Backspace:
             if self.cur_index > 0:
-                self.text = (
-                    self.text[: self.cur_index - 1] + self.text[self.cur_index :]
-                )
+                self.text = self.text[: self.cur_index - 1] + self.text[self.cur_index :]
                 self.cur_index -= 1
                 self.update()
         elif c == Key.Delete:
             if self.cur_index < len(self.text):
-                self.text = (
-                    self.text[: self.cur_index] + self.text[self.cur_index + 1 :]
-                )
+                self.text = self.text[: self.cur_index] + self.text[self.cur_index + 1 :]
                 self.update()
         elif isinstance(c, Key):
             pass
         else:
-            self.text = (
-                self.text[: self.cur_index] + chr(c) + self.text[self.cur_index :]
-            )
+            self.text = self.text[: self.cur_index] + chr(c) + self.text[self.cur_index :]
             self.cur_index += 1
             self.update()
 
@@ -176,9 +168,7 @@ class MultiTextInputView(SingleChoiceInputView):
 
         if initial_values is None:
             initial_values = [None] * len(options)
-        kwargs.update(
-            dict(nchr_prepend=self.optionWidth + 1 + 1, tokenizefun=_tokenize)
-        )
+        kwargs.update(dict(nchr_prepend=self.optionWidth + 1 + 1, tokenizefun=_tokenize))
         self.children = [
             self.text_input_type(**kwargs)
             if val is None
@@ -231,10 +221,11 @@ class MultiTextInputView(SingleChoiceInputView):
         return all(child._is_ok() for child in self.children)
 
     def _getOutput(self):
-        return {
-            str(option): child._getOutput()
-            for option, child in zip(self.options, self.children)
-        }
+        if self.cur_index is not None:  # was not cancelled
+            return {
+                str(option): child._getOutput()
+                for option, child in zip(self.options, self.children)
+            }
 
     def _draw_option(self, i, y):
         option = self.options[i]

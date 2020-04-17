@@ -76,6 +76,8 @@ class FileInputView(CallableView):
                     for entry in it:
                         try:
                             filepath = entry.name
+                            if filepath[0] == ".":
+                                continue
                             if entry.is_dir():
                                 filepath += "/"
                             self.cur_dir_files.append(filepath)

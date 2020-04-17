@@ -46,7 +46,7 @@ class SingleChoiceInputView(CallableView):
             if not isinstance(newoptions[i], Text):
                 newoptions[i] = TextElement(newoptions[i])
         if self.options is not None:
-            self.clearBeforeDrawSize = len(self.options)
+            self.clearBeforeDrawSize = max(self.clearBeforeDrawSize, len(self.options))
         self.options = newoptions
         if self.cur_index is not None and self.cur_index > len(newoptions):
             self.cur_index = 0
@@ -72,14 +72,10 @@ class SingleChoiceInputView(CallableView):
         elif c == Key.Return:
             if self._is_ok():
                 self.isActive = False
-        elif (self.isVertical and c == Key.Up) or (
-            not self.isVertical and c == Key.Left
-        ):
+        elif (self.isVertical and c == Key.Up) or (not self.isVertical and c == Key.Left):
             self.cur_index = max(0, self.cur_index - 1)
             self.update()
-        elif (self.isVertical and c == Key.Down) or (
-            not self.isVertical and c == Key.Right
-        ):
+        elif (self.isVertical and c == Key.Down) or (not self.isVertical and c == Key.Right):
             self.cur_index = min(len(self.options) - 1, self.cur_index + 1)
             self.update()
         elif isinstance(c, Key):
@@ -149,12 +145,7 @@ class SingleChoiceInputView(CallableView):
             self.layout.window.addstr(y, x, "[", color)
             x += 1
         nchr = option.drawAt(
-            y,
-            x,
-            self.layout,
-            color,
-            overridecolor=overridecolor,
-            renderfun=self.renderfun,
+            y, x, self.layout, color, overridecolor=overridecolor, renderfun=self.renderfun,
         )
         x += nchr
         if self.addBrackets:
@@ -162,7 +153,7 @@ class SingleChoiceInputView(CallableView):
             x += 1
         nothing = " " * (self.maxStrLength - x)
         self.layout.window.addstr(y, x, nothing, self.layout.color.default)
-        return nchr
+        return x
 
     def _drawAt_vertical(self, y):
         if y is None:
@@ -283,7 +274,8 @@ class MultipleChoiceInputView(SingleChoiceInputView):
             super(MultipleChoiceInputView, self)._handleKey(c)
 
     def _getOutput(self):
-        return self.checked
+        if self.cur_index is not None:
+            return self.checked
 
     def _render_option(self, optionStr):
         status = " "
@@ -366,11 +358,7 @@ class MultiSingleChoiceInputView(SingleChoiceInputView):
             color = self.color
             if self.selectedIndices is not None:
                 if j == self.selectedIndices[i]:
-                    if (
-                        self.cur_index is not None
-                        and i == self.cur_index
-                        and self.isActive
-                    ):
+                    if self.cur_index is not None and i == self.cur_index and self.isActive:
                         color = self.emphasisColor
                     else:
                         color = self.highlightColor
@@ -423,22 +411,21 @@ class MultiMultipleChoiceInputView(MultiSingleChoiceInputView):
             self.update()
         elif c == Key.Right:
             if self.cur_col is not None:
-                self.cur_col = min(
-                    len(self.values[self.cur_index]) - 1, self.cur_col + 1
-                )
+                self.cur_col = min(len(self.values[self.cur_index]) - 1, self.cur_col + 1)
             self.update()
         elif c == ord(" "):
             if self.cur_index is not None and self.cur_col is not None:
                 valueStr = str(self.values[self.cur_index][self.cur_col])
-                self.checked[self.cur_index][valueStr] = not self.checked[
-                    self.cur_index
-                ][valueStr]
+                self.checked[self.cur_index][valueStr] = not self.checked[self.cur_index][
+                    valueStr
+                ]
                 self.update()
         else:
             super(MultiSingleChoiceInputView, self)._handleKey(c)
 
     def _getOutput(self):
-        return self.checked
+        if self.cur_index is not None:
+            return self.checked
 
     def _draw_option(self, i, y):
         option = self.options[i]

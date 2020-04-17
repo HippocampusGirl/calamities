@@ -28,7 +28,7 @@ class Layout:
         # self.window.leaveok(False)
 
         self.statusBar = curses.newpad(1, basePadSize)
-        self.statusBar.bkgd(" ", self.color.black)
+        self.statusBar.bkgd(" ", self.color.white)
 
         self.draw()
 
@@ -110,4 +110,4 @@ class Layout:
 
     def setStatusBar(self, text):
         self.clearStatusBar()
-        self.statusBar.addstr(0, 0, text)
+        self.statusBar.addstr(0, 0, text, self.color.white)

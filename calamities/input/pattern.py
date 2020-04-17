@@ -19,9 +19,10 @@ from .choice import SingleChoiceInputView
 from ..text import TextElement, TextElementCollection, Text
 from ..file import resolve
 
+tag_parse = re.compile(r"{(?P<tag_name>[a-z]+)(:(?P<filter>[^}]+))?}")
+
 _tokenize0 = re.compile(r"(\A|[^\\])({)([a-z]+)(?:(:)(.+))?(})")
 _tokenize1 = re.compile(r"(\A|[^\\])({[a-z]+(?::(?:[^{}]|\\{|\\})+)?})")
-_tag_parse = re.compile(r"{(?P<tag_name>[a-z]+)(:(?P<filter>.+))?}")
 _magic_check = re.compile(r"(?:\*|\?|(?:\A|[^\\]){|[^\\]})")
 _recursive_check = re.compile(r"\*\*")
 _special_match = re.compile(r"(\\[AbBdDsDwWZ])")
@@ -82,7 +83,7 @@ def get_entities_in_path(pat):
     for token in tokens:
         if len(token) == 0:
             continue
-        matchobj = _tag_parse.fullmatch(token)
+        matchobj = tag_parse.fullmatch(token)
         if matchobj is not None:
             tag_name = matchobj.group("tag_name")
             res.append(tag_name)
@@ -95,7 +96,7 @@ def _translate(pat, entities):
     for token in tokens:
         if len(token) == 0:
             continue
-        matchobj = _tag_parse.fullmatch(token)
+        matchobj = tag_parse.fullmatch(token)
         if matchobj is not None:
             tag_name = matchobj.group("tag_name")
             if entities is None or tag_name in entities:
