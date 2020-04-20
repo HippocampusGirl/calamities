@@ -48,7 +48,10 @@ class Layout:
             del self.viewsById[id]
         if id in self.viewSizesById:
             del self.viewSizesById[id]
-        self.viewOrder.remove(id)
+        try:
+            self.viewOrder.remove(id)
+        except ValueError:
+            pass
         if self.focusedView == view:
             self.focusedView = None
         return view  # for chaining
