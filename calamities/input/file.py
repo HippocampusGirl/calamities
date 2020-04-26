@@ -20,9 +20,7 @@ class FileInputView(CallableView):
         super(FileInputView, self).__init__(**kwargs)
         self.text_input_view = TextInputView(base_path, messagefun=messagefun)
         self.text_input_view.update = self.update
-        self.suggestion_view = SingleChoiceInputView(
-            [], isVertical=True, addBrackets=False
-        )
+        self.suggestion_view = SingleChoiceInputView([], isVertical=True, addBrackets=False)
         self.suggestion_view.update = self.update
 
         self.matching_files = []
@@ -106,9 +104,7 @@ class FileInputView(CallableView):
             self.text = None
             self.suggestion_view.set_options([])
             self.isActive = False
-        elif (
-            self.suggestion_view.isActive and self.suggestion_view.cur_index is not None
-        ):
+        elif self.suggestion_view.isActive and self.suggestion_view.cur_index is not None:
             if c == Key.Up and self.suggestion_view.cur_index == 0:
                 self.suggestion_view.offset = 0
                 self.suggestion_view.cur_index = None
@@ -134,11 +130,15 @@ class FileInputView(CallableView):
             else:
                 self.suggestion_view._handleKey(c)
         else:
+            cur_text = self.text
             if c == Key.Down and len(self.matching_files) > 0:
                 self.suggestion_view.isActive = True
                 self.text_input_view.isActive = False
                 self.suggestion_view._before_call()
                 self.update()
+            elif c == Key.Tab and len(self.matching_files) > 0:
+                self.text = op.join(op.dirname(str(self.text)), str(self.matching_files[0]))
+                self.text_input_view.cur_index = len(self.text)
             elif c == Key.Return:
                 if self._is_ok():
                     self.suggestion_view.set_options([])
@@ -146,12 +146,12 @@ class FileInputView(CallableView):
                     self.text_input_view.isActive = False
                     self.isActive = False
             elif self.text_input_view.isActive:
-                cur_text = self.text
                 self.text_input_view._handleKey(c)
-                if self.text is not None and self.text != cur_text:
-                    # was changed
-                    self._scan_files()
-                    self.update()
+
+            if self.text is not None and self.text != cur_text:
+                # was changed
+                self._scan_files()
+                self.update()
 
     def drawAt(self, y):
         if y is None:
@@ -183,6 +183,8 @@ class DirectoryInputView(FileInputView):
                     for entry in it:
                         try:
                             filepath = entry.name
+                            if filepath[0] == ".":
+                                continue
                             if entry.is_dir():
                                 filepath += "/"
                                 self.cur_dir_files.append(filepath)

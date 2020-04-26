@@ -10,7 +10,7 @@ import curses.ascii
 import enum
 import queue
 
-import sys
+import os
 
 
 class Key(enum.Enum):
@@ -20,6 +20,7 @@ class Key(enum.Enum):
     Down = "down"
     Left = "left"
     Right = "right"
+    Tab = "tab"
     Backspace = "backspace"
     Delete = "delete"
 
@@ -33,7 +34,7 @@ class Keyboard:
         if c == curses.ascii.ETX:  # ctrl-c
             self.queue.put_nowait(Key.Break)
         elif c == curses.ascii.EOT:  # ctrl-d
-            sys.exit(0)
+            os._exit(1)
         elif c == curses.ascii.NL or c == curses.ascii.CR:
             self.queue.put_nowait(Key.Return)
         elif c == curses.KEY_UP:
@@ -44,6 +45,8 @@ class Keyboard:
             self.queue.put_nowait(Key.Left)
         elif c == curses.KEY_RIGHT:
             self.queue.put_nowait(Key.Right)
+        elif c == curses.ascii.TAB or c == curses.ascii.HT:
+            self.queue.put_nowait(Key.Tab)
         elif c == curses.ascii.DEL or c == curses.ascii.BS:
             self.queue.put_nowait(Key.Backspace)
         elif c == curses.KEY_DC:

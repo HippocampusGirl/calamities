@@ -414,11 +414,16 @@ class FilePatternInputView(CallableView):
             else:
                 self.suggestion_view._handleKey(c)
         else:
+            cur_text = self.text
+            cur_index = self.text_input_view.cur_index
             if c == Key.Down and (self.is_suggesting_entities or len(self.matching_files) > 0):
                 self.suggestion_view.isActive = True
                 self.text_input_view.isActive = False
                 self.suggestion_view._before_call()
                 self.update()
+            elif c == Key.Tab and len(self.matching_files) > 0:
+                self.text = op.join(op.dirname(str(self.text)), str(self.matching_files[0]))
+                self.text_input_view.cur_index = len(self.text)
             elif c == Key.Return:
                 if self._is_ok():
                     self.suggestion_view.set_options([])
@@ -426,16 +431,15 @@ class FilePatternInputView(CallableView):
                     self.text_input_view.isActive = False
                     self.isActive = False
             elif self.text_input_view.isActive:
-                cur_text = self.text
-                cur_index = self.text_input_view.cur_index
                 self.text_input_view._handleKey(c)
-                if (
-                    self.text is not None and self.text != cur_text
-                ) or cur_index != self.text_input_view.cur_index:
-                    # was changed
-                    self.message_is_dirty = False
-                    self._scan_files()
-                    self.update()
+
+            if (
+                self.text is not None and self.text != cur_text
+            ) or cur_index != self.text_input_view.cur_index:
+                # was changed
+                self.message_is_dirty = False
+                self._scan_files()
+                self.update()
 
     def drawAt(self, y):
         if y is not None:
