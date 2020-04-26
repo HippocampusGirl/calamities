@@ -34,6 +34,12 @@ class Keyboard:
         if c == curses.ascii.ETX:  # ctrl-c
             self.queue.put_nowait(Key.Break)
         elif c == curses.ascii.EOT:  # ctrl-d
+            try:
+                curses.noraw()
+                curses.echo()
+                curses.endwin()
+            except Exception:
+                pass
             os._exit(1)
         elif c == curses.ascii.NL or c == curses.ascii.CR:
             self.queue.put_nowait(Key.Return)
