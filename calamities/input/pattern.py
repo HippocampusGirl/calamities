@@ -223,28 +223,19 @@ class FilePatternInputView(CallableView):
     def _tokenize(self, text, addBrackets=True):
         if addBrackets:
             text = f"[{text}]"
-        tokens = _tokenize0.split(text)
+        tokens = _tokenize1.split(text)
         tokens = [token for token in tokens if token is not None]
         retval = []
-        for i, token in enumerate(tokens):
-            if token == "{":
-                text_elem = TextElement(token)
-                color = None
-                if i + 1 < len(tokens):
-                    tag = tokens[i + 1]
-                    if tag in self.color_by_tag:
-                        color = self.color_by_tag[tag]
-                if color is None:
-                    color = self.highlightColor
+        for token in tokens:
+            text_elem = TextElement(token)
+            matchobj = tag_parse.fullmatch(token)
+            if matchobj is not None:
+                tag_name = matchobj.group("tag_name")
+                color = self.highlightColor
+                if tag_name in self.color_by_tag:
+                    color = self.color_by_tag[tag_name]
                 text_elem.color = color
-                retval.append(text_elem)
-            elif token == "}" and len(retval) > 0:
-                retval[-1].value += token
-                retval.append(TextElement(""))
-            elif len(retval) > 0:
-                retval[-1].value += token
-            else:
-                retval.append(TextElement(token))
+            retval.append(text_elem)
         return TextElementCollection(retval)
 
     def _messagefun(self):
