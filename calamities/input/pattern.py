@@ -14,7 +14,7 @@ import inflect
 
 from ..keyboard import Key
 from ..view import CallableView
-from .text import TextInputView
+from .text import TextInputView, common_chars
 from .choice import SingleChoiceInputView
 from ..text import TextElement, TextElementCollection, Text
 from ..file import resolve
@@ -303,9 +303,7 @@ class FilePatternInputView(CallableView):
         try:
             for filepath, tagdict in tagglobres:
                 if "suggestion" in tagdict and len(tagdict["suggestion"]) > 0:
-                    suggestionstr = _suggestion_match.sub(
-                        tagdict["suggestion"], suggestiontempl
-                    )
+                    suggestionstr = _suggestion_match.sub(tagdict["suggestion"], suggestiontempl)
                     if op.isdir(filepath):
                         suggestionstr = op.join(suggestionstr, "")
                     new_suggestions.add(suggestionstr)
@@ -321,16 +319,12 @@ class FilePatternInputView(CallableView):
         tagsetdict = {}
         if len(tagdictlist) > 0:
             tagsetdict = {
-                k: set(dic[k] for dic in tagdictlist)
-                for k in tagdictlist[0]
-                if k != "suggestion"
+                k: set(dic[k] for dic in tagdictlist) for k in tagdictlist[0] if k != "suggestion"
             }
 
         nfile = len(filepaths)
 
-        has_all_required_entities = all(
-            entity in tagsetdict for entity in self.required_entities
-        )
+        has_all_required_entities = all(entity in tagsetdict for entity in self.required_entities)
 
         if not self.message_is_dirty:
             if has_all_required_entities:
@@ -422,7 +416,8 @@ class FilePatternInputView(CallableView):
                 self.suggestion_view._before_call()
                 self.update()
             elif c == Key.Tab and len(self.matching_files) > 0:
-                self.text = op.join(op.dirname(str(self.text)), str(self.matching_files[0]))
+                cc = common_chars(self.matching_files)
+                self.text = op.join(op.dirname(str(self.text)), cc)
                 self.text_input_view.cur_index = len(self.text)
             elif c == Key.Return:
                 if self._is_ok():

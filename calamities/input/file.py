@@ -10,7 +10,7 @@ from os import path as op
 
 from ..keyboard import Key
 from ..view import CallableView
-from .text import TextInputView
+from .text import TextInputView, common_chars
 from .choice import SingleChoiceInputView
 from ..file import get_dir, resolve
 
@@ -137,7 +137,8 @@ class FileInputView(CallableView):
                 self.suggestion_view._before_call()
                 self.update()
             elif c == Key.Tab and len(self.matching_files) > 0:
-                self.text = op.join(op.dirname(str(self.text)), str(self.matching_files[0]))
+                cc = common_chars(self.matching_files)
+                self.text = op.join(op.dirname(str(self.text)), cc)
                 self.text_input_view.cur_index = len(self.text)
             elif c == Key.Return:
                 if self._is_ok():

@@ -14,19 +14,26 @@ from ..text import TextElement
 from .choice import SingleChoiceInputView
 
 
+def common_chars(inlist):
+    inlist = [str(s) for s in inlist]
+    k = min(len(s) for s in inlist)
+    ret = ""
+    for i in range(k):
+        ls = set(s[i] for s in inlist)
+        if len(ls) == 1:
+            ret += ls.pop()
+        else:
+            break
+    return ret
+
+
 def _tokenize(text):
     return TextElement(f"[{text}]")
 
 
 class TextInputView(CallableView):
     def __init__(
-        self,
-        text=None,
-        isokfun=None,
-        messagefun=None,
-        tokenizefun=None,
-        nchr_prepend=0,
-        **kwargs,
+        self, text=None, isokfun=None, messagefun=None, tokenizefun=None, nchr_prepend=0, **kwargs,
     ):
         super(TextInputView, self).__init__(**kwargs)
         self.text = text
@@ -152,9 +159,7 @@ class MultiTextInputView(SingleChoiceInputView):
 
     def __init__(self, options, initial_values=None, **kwargs):
         super_kwargs = {
-            k: v
-            for k, v in kwargs.items()
-            if k in {"color", "emphasisColor", "highlightColor"}
+            k: v for k, v in kwargs.items() if k in {"color", "emphasisColor", "highlightColor"}
         }
         super(MultiTextInputView, self).__init__(
             options,
@@ -170,9 +175,7 @@ class MultiTextInputView(SingleChoiceInputView):
             initial_values = [None] * len(options)
         kwargs.update(dict(nchr_prepend=self.optionWidth + 1 + 1, tokenizefun=_tokenize))
         self.children = [
-            self.text_input_type(**kwargs)
-            if val is None
-            else self.text_input_type(val, **kwargs)
+            self.text_input_type(**kwargs) if val is None else self.text_input_type(val, **kwargs)
             for val in initial_values
         ]
         for child in self.children:
