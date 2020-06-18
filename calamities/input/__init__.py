@@ -17,7 +17,7 @@ from .text import (
     MultiNumberInputView,
 )
 from .file import FileInputView, DirectoryInputView
-from .pattern import FilePatternInputView, tag_glob, has_magic, get_entities_in_path
+from .pattern import FilePatternInputView
 
 __all__ = [
     SingleChoiceInputView,
@@ -31,7 +31,4 @@ __all__ = [
     FileInputView,
     DirectoryInputView,
     FilePatternInputView,
-    tag_glob,
-    has_magic,
-    get_entities_in_path,
 ]

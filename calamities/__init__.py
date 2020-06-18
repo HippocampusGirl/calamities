@@ -2,9 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import curses
+try:
+    import curses
 
-curses.setupterm()  # noqa
+    curses.setupterm()  # noqa
+except Exception:
+    pass
 
 from .app import App
 from .keyboard import Key, Keyboard
@@ -21,12 +24,14 @@ from .input import (
     FileInputView,
     DirectoryInputView,
     FilePatternInputView,
+)
+from .layout import Layout
+from .text import Text, TextElement, TextElementCollection
+from .pattern import (
     tag_glob,
     has_magic,
     get_entities_in_path,
 )
-from .layout import Layout
-from .text import Text, TextElement, TextElementCollection
 
 __all__ = [
     App,
