@@ -18,7 +18,9 @@ from ..file import get_dir, resolve
 class FileInputView(CallableView):
     def __init__(self, base_path=None, exists=True, messagefun=None, **kwargs):
         super(FileInputView, self).__init__(**kwargs)
-        self.text_input_view = TextInputView(base_path, messagefun=messagefun)
+        self.text_input_view = TextInputView(
+            base_path, messagefun=messagefun, forbidden_chars="'\"'", maxlen=256
+        )
         self.text_input_view.update = self.update
         self.suggestion_view = SingleChoiceInputView([], isVertical=True, addBrackets=False)
         self.suggestion_view.update = self.update
@@ -51,19 +53,23 @@ class FileInputView(CallableView):
     def _is_ok(self):
         if self.exists:
             try:
-                return op.isfile(resolve(self.text))
+                path = str(self.text).strip()
+                return op.isfile(resolve(path))
             except Exception:
                 return False
         return True
 
     def _getOutput(self):
-        try:
-            return resolve(self.text)
-        except Exception:
-            pass
+        if self.text is not None:
+            try:
+                path = str(self.text).strip()
+                return resolve(path)
+            except Exception:
+                pass
 
     def _scan_dir(self):
-        dir = get_dir(self.text)
+        path = str(self.text).strip()
+        dir = get_dir(path)
         if dir != self.cur_dir:
             self.cur_dir = dir
             self.cur_dir_files = []
@@ -146,7 +152,12 @@ class FileInputView(CallableView):
                     self.suggestion_view.isActive = False
                     self.text_input_view.isActive = False
                     self.isActive = False
-            elif self.text_input_view.isActive:
+            else:
+                if not self.text_input_view.isActive:
+                    self.suggestion_view.isActive = False
+                    self.text_input_view.isActive = True
+                    self.text_input_view._before_call()
+                    self.update()
                 self.text_input_view._handleKey(c)
 
             if self.text is not None and self.text != cur_text:
@@ -160,6 +171,12 @@ class FileInputView(CallableView):
         size = 0
         size += self.text_input_view.drawAt(y + size)
         size += self.suggestion_view.drawAt(y + size)
+
+        if self.text_input_view._viewWidth > self._viewWidth:
+            self._viewWidth = self.text_input_view._viewWidth
+        if self.suggestion_view._viewWidth > self._viewWidth:
+            self._viewWidth = self.suggestion_view._viewWidth
+
         return size
 
 
@@ -167,13 +184,15 @@ class DirectoryInputView(FileInputView):
     def _is_ok(self):
         if self.exists:
             try:
-                return op.isdir(resolve(self.text))
+                path = str(self.text).strip()
+                return op.isdir(resolve(path))
             except Exception:
                 return False
         return True
 
     def _scan_dir(self):
-        dir = get_dir(self.text)
+        path = str(self.text).strip()
+        dir = get_dir(path)
         if dir != self.cur_dir:
             self.cur_dir = dir
             self.cur_dir_files = []

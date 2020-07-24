@@ -40,7 +40,12 @@ class FilePatternInputView(CallableView):
     ):
         super(FilePatternInputView, self).__init__(**kwargs)
         self.text_input_view = TextInputView(
-            base_path, tokenizefun=self._tokenize, nchr_prepend=1, messagefun=self._messagefun,
+            base_path,
+            tokenizefun=self._tokenize,
+            nchr_prepend=1,
+            messagefun=self._messagefun,
+            forbidden_chars="'\"'",
+            maxlen=256,
         )
         self.text_input_view.update = self.update
         self.suggestion_view = SingleChoiceInputView([], isVertical=True, addBrackets=False)
@@ -130,11 +135,12 @@ class FilePatternInputView(CallableView):
 
     def _getOutput(self):
         if self.text is not None:
-            return resolve(self.text)
+            path = str(self.text).strip()
+            return resolve(path)
 
     def _scan_files(self):
         if self.text is not None:
-            text = str(self.text)
+            text = str(self.text).strip()
             cur_index = self.text_input_view.cur_index
             matchobj = show_tag_suggestion_check.match(text[:cur_index])
             if matchobj is not None:
@@ -281,7 +287,12 @@ class FilePatternInputView(CallableView):
                     self.suggestion_view.isActive = False
                     self.text_input_view.isActive = False
                     self.isActive = False
-            elif self.text_input_view.isActive:
+            else:
+                if not self.text_input_view.isActive:
+                    self.suggestion_view.isActive = False
+                    self.text_input_view.isActive = True
+                    self.text_input_view._before_call()
+                    self.update()
                 self.text_input_view._handleKey(c)
 
             if (
@@ -297,4 +308,10 @@ class FilePatternInputView(CallableView):
             size = 0
             size += self.text_input_view.drawAt(y + size)
             size += self.suggestion_view.drawAt(y + size)
+
+            if self.text_input_view._viewWidth > self._viewWidth:
+                self._viewWidth = self.text_input_view._viewWidth
+            if self.suggestion_view._viewWidth > self._viewWidth:
+                self._viewWidth = self.suggestion_view._viewWidth
+
             return size

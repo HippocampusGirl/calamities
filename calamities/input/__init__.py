@@ -7,6 +7,7 @@
 from .choice import (
     SingleChoiceInputView,
     MultipleChoiceInputView,
+    CombinedMultipleAndSingleChoiceInputView,
     MultiSingleChoiceInputView,
     MultiMultipleChoiceInputView,
 )
@@ -15,6 +16,8 @@ from .text import (
     NumberInputView,
     MultiTextInputView,
     MultiNumberInputView,
+    MultiCombinedTextAndSingleChoiceInputView,
+    MultiCombinedNumberAndSingleChoiceInputView,
 )
 from .file import FileInputView, DirectoryInputView
 from .pattern import FilePatternInputView
@@ -22,12 +25,15 @@ from .pattern import FilePatternInputView
 __all__ = [
     SingleChoiceInputView,
     MultipleChoiceInputView,
+    CombinedMultipleAndSingleChoiceInputView,
     MultiSingleChoiceInputView,
     MultiMultipleChoiceInputView,
     TextInputView,
     NumberInputView,
     MultiTextInputView,
     MultiNumberInputView,
+    MultiCombinedTextAndSingleChoiceInputView,
+    MultiCombinedNumberAndSingleChoiceInputView,
     FileInputView,
     DirectoryInputView,
     FilePatternInputView,

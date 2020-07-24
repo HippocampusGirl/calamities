@@ -34,7 +34,6 @@ class SingleChoiceInputView(CallableView):
         self.options = None
         self.set_options(options)
 
-        self.maxStrLength = 0
         self.clearBeforeDrawSize = 0
         self.offset = 0
         self.renderfun = renderfun
@@ -60,9 +59,7 @@ class SingleChoiceInputView(CallableView):
         arrows = "← →"
         if self.isVertical:
             arrows = "↑ ↓"
-        self._setStatusBar(
-            "  ".join(["[↵] Ok", f"[{arrows}] Change selection", "[ctrl-c] Cancel"])
-        )
+        self._setStatusBar("  ".join(["[↵] Ok", f"[{arrows}] Change selection", "[ctrl-c] Cancel"]))
 
     def _handleKey(self, c):
         if c == Key.Break:
@@ -82,9 +79,6 @@ class SingleChoiceInputView(CallableView):
             pass
         else:
             pass
-
-    def _getViewWidth(self):
-        return self.maxStrLength
 
     def _getOutput(self):
         if self.cur_index is not None:
@@ -114,11 +108,15 @@ class SingleChoiceInputView(CallableView):
                 self.layout.window.addstr(y, x, "]", color)
                 x += 1
             x += 1
+
+        if x > self._viewWidth:
+            self._viewWidth = x
+
         return 1
 
     def _draw_text(self, y, text, color):
         nchr = text.drawAt(y, 0, self.layout, color)
-        nothing = " " * (self.maxStrLength - nchr)
+        nothing = " " * (self._viewWidth - nchr)
         self.layout.window.addstr(y, nchr, nothing, self.layout.color.default)
         return nchr
 
@@ -126,7 +124,7 @@ class SingleChoiceInputView(CallableView):
         if y is None:
             return
         if i >= len(self.options):
-            nothing = " " * self.maxStrLength
+            nothing = " " * self._viewWidth
             self.layout.window.addstr(y, 0, nothing, self.layout.color.default)
             return
         option = self.options[i]
@@ -151,7 +149,7 @@ class SingleChoiceInputView(CallableView):
         if self.addBrackets:
             self.layout.window.addstr(y, x, "]", color)
             x += 1
-        nothing = " " * (self.maxStrLength - x)
+        nothing = " " * (self._viewWidth - x)
         self.layout.window.addstr(y, x, nothing, self.layout.color.default)
         return x
 
@@ -200,8 +198,8 @@ class SingleChoiceInputView(CallableView):
         if haveMoreAtFront:
             entry = TextElement(f"-- {self.offset} more --", self.layout.color.default)
             nchr = self._draw_text(y + size, entry, self.color)
-            if nchr > self.maxStrLength:
-                self.maxStrLength = nchr
+            if nchr > self._viewWidth:
+                self._viewWidth = nchr
             size += 1
 
         upper = self.offset + correctedMaxSize
@@ -211,16 +209,16 @@ class SingleChoiceInputView(CallableView):
             nchr = self._draw_option(i, y + size)
             if nchr is None:
                 continue
-            if nchr > self.maxStrLength:
-                self.maxStrLength = nchr
+            if nchr > self._viewWidth:
+                self._viewWidth = nchr
             size += 1
 
         if haveMoreAtEnd:
             n = len(self.options) - (self.offset + correctedMaxSize)
             entry = TextElement(f"-- {n} more --", self.layout.color.default)
             nchr = self._draw_text(y + size, entry, self.color)
-            if nchr > self.maxStrLength:
-                self.maxStrLength = nchr
+            if nchr > self._viewWidth:
+                self._viewWidth = nchr
             size += 1
 
         return size
@@ -289,14 +287,68 @@ class MultipleChoiceInputView(SingleChoiceInputView):
         return self.color
 
 
+class CombinedMultipleAndSingleChoiceInputView(MultipleChoiceInputView):
+    def __init__(self, multiple_choice_options, single_choice_options, **kwargs):
+        options = [*multiple_choice_options, *single_choice_options]
+        self.single_choice_options = single_choice_options
+        super(CombinedMultipleAndSingleChoiceInputView, self).__init__(
+            options, **kwargs,
+        )
+
+    def _before_call(self):
+        if self.cur_index is None:
+            self.cur_index = 0
+        arrows = "← →"
+        if self.isVertical:
+            arrows = "↑ ↓"
+        self._setStatusBar(
+            "  ".join(
+                [
+                    "[↵] Ok",
+                    "[space] Toggle checked/unchecked",
+                    f"[{arrows}] Change selection",
+                    "[ctrl-c] Cancel",
+                ]
+            )
+        )
+
+    def _handleKey(self, c):
+        if c == ord(" "):
+            if self.cur_index is not None:
+                optionStr = str(self.options[self.cur_index])
+                self.checked[optionStr] = not self.checked[optionStr]
+                self.update()
+        else:
+            super(MultipleChoiceInputView, self)._handleKey(c)
+
+    def _getOutput(self):
+        if self.cur_index is not None:
+            optionStr = str(self.options[self.cur_index])
+            if optionStr in self.single_choice_options:
+                return optionStr
+            else:
+                return {
+                    k: v for k, v in self.checked.items() if k not in self.single_choice_options
+                }
+
+    def _render_option(self, optionStr):
+        if optionStr in self.single_choice_options:
+            return f"[{optionStr}]"
+        status = " "
+        if self.checked[optionStr]:
+            status = "*"
+        return f"[{status}] {optionStr}"
+
+    def _color_option(self, option):
+        if self.checked[str(option)]:
+            return self.highlightColor
+        return self.color
+
+
 class MultiSingleChoiceInputView(SingleChoiceInputView):
     def __init__(self, options, values, addBrackets=True, **kwargs):
         super(MultiSingleChoiceInputView, self).__init__(
-            options,
-            isVertical=True,
-            addBrackets=False,
-            showSelectionAfterExit=False,
-            **kwargs,
+            options, isVertical=True, addBrackets=False, showSelectionAfterExit=False, **kwargs,
         )
         self.selectedIndices = None
         self.optionWidth = max(len(option) for option in options)
@@ -332,8 +384,7 @@ class MultiSingleChoiceInputView(SingleChoiceInputView):
         elif c == Key.Right:
             if self.cur_index is not None and self.selectedIndices is not None:
                 self.selectedIndices[self.cur_index] = min(
-                    len(self.values[self.cur_index]) - 1,
-                    self.selectedIndices[self.cur_index] + 1,
+                    len(self.values[self.cur_index]) - 1, self.selectedIndices[self.cur_index] + 1,
                 )
             self.update()
         else:
@@ -378,7 +429,7 @@ class MultiSingleChoiceInputView(SingleChoiceInputView):
 class MultiMultipleChoiceInputView(MultiSingleChoiceInputView):
     nchr_prepend = 4
 
-    def __init__(self, options, values, checked=None, **kwargs):
+    def __init__(self, options, values, checked=None, enforce_unique=False, **kwargs):
         super(MultiMultipleChoiceInputView, self).__init__(
             options, values, addBrackets=False, **kwargs,
         )
@@ -388,9 +439,10 @@ class MultiMultipleChoiceInputView(MultiSingleChoiceInputView):
         if checked is None:
             checked = [[] for _ in options]
         self.checked = [
-            {str(k): (str(k) in checked[i]) for k in self.values[i]}
-            for i in range(len(options))
+            {str(k): (str(k) in checked[i]) for k in self.values[i]} for i in range(len(options))
         ]
+
+        self.enforce_unique = enforce_unique
 
     def _before_call(self):
         super(MultiSingleChoiceInputView, self)._before_call()
@@ -415,10 +467,12 @@ class MultiMultipleChoiceInputView(MultiSingleChoiceInputView):
             self.update()
         elif c == ord(" "):
             if self.cur_index is not None and self.cur_col is not None:
-                valueStr = str(self.values[self.cur_index][self.cur_col])
-                self.checked[self.cur_index][valueStr] = not self.checked[self.cur_index][
-                    valueStr
-                ]
+                value = str(self.values[self.cur_index][self.cur_col])
+                checked = self.checked[self.cur_index][value]
+                if not checked and self.enforce_unique:
+                    if any(row.get(value) is True for row in self.checked):
+                        return  # already active
+                self.checked[self.cur_index][value] = not checked  # toggle value
                 self.update()
         else:
             super(MultiSingleChoiceInputView, self)._handleKey(c)
