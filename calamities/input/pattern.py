@@ -189,7 +189,9 @@ class FilePatternInputView(CallableView):
         has_all_required_entities = all(entity in tagsetdict for entity in self.required_entities)
 
         if not self.message_is_dirty:
-            if has_all_required_entities:
+            if nfile == 0:
+                self.message.value = ""
+            elif has_all_required_entities:
                 self.message.color = self.layout.color.iblue
                 self.message.value = p.inflect(f"Found {nfile} plural('file', {nfile})")
 

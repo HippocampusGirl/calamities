@@ -470,8 +470,9 @@ class MultiMultipleChoiceInputView(MultiSingleChoiceInputView):
                 value = str(self.values[self.cur_index][self.cur_col])
                 checked = self.checked[self.cur_index][value]
                 if not checked and self.enforce_unique:
-                    if any(row.get(value) is True for row in self.checked):
-                        return  # already active
+                    for row in self.checked:
+                        if value in row:
+                            row[value] = False  # disable other active
                 self.checked[self.cur_index][value] = not checked  # toggle value
                 self.update()
         else:
