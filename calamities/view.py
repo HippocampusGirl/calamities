@@ -26,6 +26,9 @@ class View:
         self.color = color
         self.emphasisColor = emphasisColor
         self.highlightColor = highlightColor
+
+        self.layout = None
+
         self._viewWidth = 100
 
     def __repr__(self):
@@ -41,7 +44,7 @@ class View:
             self.emphasisColor = self.layout.color.iblue
         self.emphasisColor |= curses.A_BOLD
 
-    def drawAt(self):
+    def drawAt(self, y):
         raise NotImplementedError
 
     def draw(self):
@@ -67,10 +70,12 @@ class View:
         self.layout.focus(self)
         return self
 
-    def eraseAt(self, y):
-        nothing = " " * self._getViewWidth()
-        for i in range(self._getViewSize()):
-            self.layout.window.addstr(y + i, 0, nothing, self.layout.color.default)
+    def eraseAt(self, y, n=None):
+        if n is None:
+            n = self._getViewSize()
+        for i in range(n):
+            self.layout.window.move(y + i, 0)
+            self.layout.window.clrtoeol()
         return 0
 
     def erase(self):
@@ -107,8 +112,7 @@ class SpacerView(View):
         self.n = n
 
     def drawAt(self, y):
-        nothing = " " * 256
-        self.layout.window.addstr(y, 0, nothing, self.layout.color.default)
+        self.eraseAt(y, n=self.n)
         return self.n
 
 

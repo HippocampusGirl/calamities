@@ -25,7 +25,7 @@ class Layout:
         self.viewportMin = 0
 
         self.window = curses.newpad(basePadSize, basePadSize)
-        # self.window.leaveok(False)
+        self.window.leaveok(False)
 
         self.statusBar = curses.newpad(1, basePadSize)
         self.statusBar.bkgd(" ", self.color.white)
@@ -82,11 +82,12 @@ class Layout:
     def draw(self):
         y, x = self.getLayoutSize()
         self._calc_viewport(y - 1)
-        self.window.refresh(self.viewportMin, 0, 0, 0, y - 2, x)
+        self.window.noutrefresh(self.viewportMin, 0, 0, 0, y - 2, x)
         try:
-            self.statusBar.refresh(0, 0, y, 0, y, x)
+            self.statusBar.noutrefresh(0, 0, y, 0, y, x)
         except Exception:
             pass
+        curses.doupdate()
 
     def getViewSize(self, view):
         if view.id in self.viewSizesById:
