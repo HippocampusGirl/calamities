@@ -76,29 +76,38 @@ def get_entities_in_path(pat):
 
 def _translate(pat, entities):
     res = ""
+
     tokens = tokenize.split(pat)
+
     for token in tokens:
         if len(token) == 0:
             continue
+
         matchobj = tag_parse.fullmatch(token)
         if matchobj is not None:
+
             tag_name = matchobj.group("tag_name")
             if entities is None or tag_name in entities:
-                enre = r".*"
-                filter = matchobj.group("filter")
-                if filter is not None:
-                    if chartype_filter.fullmatch(filter) is not None:
-                        enre = f"{filter}+"  # [allowed characters] syntax
-                    else:  # glob syntax
-                        enre = fnmatch.translate(filter)
-                        enre = special_match.sub("", enre)
+                filter_type = matchobj.group("filter_type")
+                filter_str = matchobj.group("filter")
+
+                enre = r".+"
+                if filter_str is not None:
+                    if filter_type == ":":
+                        enre = filter_str  # regex syntax
+                    elif filter_type == "=":  # glob syntax
+                        enre = fnmatch.translate(filter_str)
+                        enre = special_match.sub("", enre)  # remove control codes
+
                 res += r"(?P<%s>%s)" % (tag_name, enre)
             else:
                 res += re.escape(token)
+
         else:
             fnre = fnmatch.translate(token)
             fnre = special_match.sub("", fnre)
             res += fnre
+
     return re.compile(res).fullmatch
 
 
