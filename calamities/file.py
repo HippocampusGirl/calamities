@@ -5,7 +5,7 @@
 import os
 from os import path as op
 
-from .config import config
+from .config import Config
 
 
 def get_dir(text):
@@ -18,8 +18,12 @@ def get_dir(text):
     return dir
 
 
-def resolve(path):
+def resolve(path) -> str:
     abspath = op.abspath(path)
-    if abspath.startswith(config.fs_root):
-        return abspath
-    return op.normpath(config.fs_root + abspath)
+
+    fs_root = Config.fs_root
+
+    if not abspath.startswith(fs_root):
+        abspath = fs_root + abspath
+
+    return op.normpath(abspath)

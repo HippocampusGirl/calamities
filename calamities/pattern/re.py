@@ -5,9 +5,9 @@
 import re
 
 
-tag_parse = re.compile(r"{(?P<tag_name>[a-z]+)(:(?P<filter>[^}]+))?}")
+tag_parse = re.compile(r"{(?P<tag_name>[a-z]+)((?P<filter_type>[:=])(?P<filter>(?:[^{}]|\\{|\\})+))?}")
 
-tokenize = re.compile(r"(\A|[^\\])({[a-z]+(?::(?:[^{}]|\\{|\\})+)?})")
+tokenize = re.compile(r"(\A|[^\\])({[a-z]+(?:[:=](?:[^{}]|\\{|\\})+)?})")
 
 magic_check = re.compile(r"(?:\*|\?|(?:\A|[^\\]){|[^\\]})")
 
@@ -15,10 +15,10 @@ recursive_check = re.compile(r"\*\*")
 
 special_match = re.compile(r"(\\[AbBdDsDwWZ])")
 
-suggestion_match = re.compile(r"({suggestion})")
+suggestion_match = re.compile(r"({suggestion(?:[:=][^}]+)?})")
 
 chartype_filter = re.compile(r"(\[.+\])")
 
-show_tag_suggestion_check = re.compile(r".*(?P<newtag>{[^}]*)\Z")
+show_tag_suggestion_check = re.compile(r".*(?P<newtag>{(?P<tag_name>[a-z]*))(?P<newfilter>[:=][^}]+)?\Z")
 
-remove_tag_remainder_match = re.compile(r"(?P<oldtag>[^{]*})")
+remove_tag_remainder_match = re.compile(r"(?P<oldtag>[^}]*?})")

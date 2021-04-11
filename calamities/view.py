@@ -5,6 +5,8 @@
 """
 
 """
+from typing import Optional
+
 import numpy as np
 import itertools
 import functools
@@ -13,6 +15,7 @@ import curses
 from .font import font
 from .cursor import Cursor
 from .text import TextElement, Text
+from .layout import Layout
 
 longestReadableLineWidth = 100
 
@@ -27,9 +30,9 @@ class View:
         self.emphasisColor = emphasisColor
         self.highlightColor = highlightColor
 
-        self.layout = None
+        self.layout: Optional[Layout] = None
 
-        self._viewWidth = 100
+        self._viewWidth: int = 100
 
     def __repr__(self):
         return f"View[id={self.id}]"

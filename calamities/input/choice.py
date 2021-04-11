@@ -72,7 +72,7 @@ class SingleChoiceInputView(CallableView):
         elif (self.isVertical and c == Key.Up) or (not self.isVertical and c == Key.Left):
             self.cur_index = max(0, self.cur_index - 1)
             self.update()
-        elif (self.isVertical and c == Key.Down) or (not self.isVertical and c == Key.Right):
+        elif (self.isVertical and c == Key.Down) or (not self.isVertical and c == Key.Right) or c == Key.Tab:
             self.cur_index = min(len(self.options) - 1, self.cur_index + 1)
             self.update()
         elif isinstance(c, Key):
@@ -346,16 +346,16 @@ class CombinedMultipleAndSingleChoiceInputView(MultipleChoiceInputView):
 
 
 class MultiSingleChoiceInputView(SingleChoiceInputView):
-    def __init__(self, options, values, addBrackets=True, **kwargs):
+    def __init__(self, options, values, selectedIndices=None, addBrackets=True, **kwargs):
         super(MultiSingleChoiceInputView, self).__init__(
             options, isVertical=True, addBrackets=False, showSelectionAfterExit=False, **kwargs,
         )
-        self.selectedIndices = None
+        self.selectedIndices = selectedIndices
         self.optionWidth = max(len(option) for option in options)
         self._add_brackets = addBrackets
 
         if not isinstance(values[0], list):
-            values = [values for option in options]
+            values = [values for _ in options]
 
         for i in range(len(options)):
             for j in range(len(values[i])):

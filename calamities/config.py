@@ -3,7 +3,4 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 class Config:
-    pass
-
-config = Config()
-config.fs_root = "/"
+    fs_root: str = "/"

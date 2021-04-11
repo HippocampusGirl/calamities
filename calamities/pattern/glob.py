@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Dict, Generator, Tuple
+
 import os
 from os import path as op
 
@@ -14,11 +16,10 @@ from .re import (
     magic_check,
     recursive_check,
     special_match,
-    chartype_filter,
 )
 
 
-def tag_glob(pathname, entities=None, dironly=False):
+def tag_glob(pathname, entities=None, dironly=False) -> Generator[Tuple[str, Dict], None, None]:
     """
     adapted from cpython glob
     """
@@ -34,11 +35,11 @@ def tag_glob(pathname, entities=None, dironly=False):
     else:
         dirs = [(dirname, {})]
     for dirname, dirtagdict in dirs:
-        for name, tagdict in _tag_glob_in_dir(dirname, basename, entities, dironly):
+        for name, tagdict in _tag_glob_in_dir(dirname, basename, entities, dironly, dirtagdict):
             yield (op.join(dirname, name), _combine_tagdict(dirtagdict, tagdict))
 
 
-def _combine_tagdict(a, b):
+def _combine_tagdict(a, b) -> Dict:
     z = b.copy()
     for k, v in a.items():
         if k in z:
@@ -48,13 +49,13 @@ def _combine_tagdict(a, b):
     return z
 
 
-def _tag_glob_in_dir(dirname, basename, entities, dironly):
+def _tag_glob_in_dir(dirname, basename, entities, dironly, parenttagdict):
     """
     adapted from cpython glob
     only basename can contain magic
     """
     assert not has_magic(dirname)
-    match = _translate(basename, entities)
+    match = _translate(basename, entities, parenttagdict)
     for x in _iterdir(dirname, dironly):
         matchobj = match(x)
         if matchobj is not None:
@@ -74,7 +75,7 @@ def get_entities_in_path(pat):
     return res
 
 
-def _translate(pat, entities):
+def _translate(pat, entities, parenttagdict):
     res = ""
 
     tokens = tokenize.split(pat)
@@ -91,10 +92,18 @@ def _translate(pat, entities):
                 filter_type = matchobj.group("filter_type")
                 filter_str = matchobj.group("filter")
 
-                enre = r".+"
+                if tag_name in parenttagdict:
+                    s = parenttagdict[tag_name]
+                    if s.endswith("/"):
+                        s = s[:-1]
+                    res += re.escape(s)
+                    # TODO warning that filter is ignored
+                    continue
+
+                enre = r"[^/]+"
                 if filter_str is not None:
                     if filter_type == ":":
-                        enre = filter_str  # regex syntax
+                        enre = filter_str.replace("\\{", "{").replace("\\}", "}")  # regex syntax
                     elif filter_type == "=":  # glob syntax
                         enre = fnmatch.translate(filter_str)
                         enre = special_match.sub("", enre)  # remove control codes
@@ -106,7 +115,10 @@ def _translate(pat, entities):
         else:
             fnre = fnmatch.translate(token)
             fnre = special_match.sub("", fnre)
+            fnre = fnre.replace(".*", "[^/]*")
             res += fnre
+
+    res += "/?"
 
     return re.compile(res).fullmatch
 
@@ -122,8 +134,11 @@ def _iterdir(dirname, dironly):
             for entry in it:
                 try:
                     if not dironly or entry.is_dir():
-                        if not _ishidden(entry.name):
-                            yield entry.name
+                        entry_name = entry.name
+                        if entry.is_dir():
+                            entry_name = op.join(entry_name, "")
+                        if not _ishidden(entry_name):
+                            yield entry_name
                 except OSError:
                     pass
     except OSError:

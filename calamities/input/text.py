@@ -10,7 +10,7 @@ import numpy as np
 
 from ..view import CallableView
 from ..keyboard import Key
-from ..text import TextElement
+from ..text import TextElement, Text
 from .choice import SingleChoiceInputView, MultiSingleChoiceInputView
 
 
@@ -54,8 +54,9 @@ class TextInputView(CallableView):
 
         self.messagefun = messagefun
 
-        self.tokenizefun = tokenizefun
         self.nchr_prepend = nchr_prepend
+
+        self.tokenizefun = tokenizefun
         if self.tokenizefun is None:
             self.tokenizefun = _tokenize
             self.nchr_prepend = 1
@@ -112,7 +113,7 @@ class TextInputView(CallableView):
             return
         curLength = None
         if self.text is not None:
-            text = self.tokenizefun(self.text)
+            text: Text = self.tokenizefun(self.text)
             curLength = len(text)
             for c, color in text:
                 if color is None:
@@ -123,7 +124,7 @@ class TextInputView(CallableView):
                     and x == self.cur_index + self.nchr_prepend
                 ):
                     color = self.emphasisColor
-                self.layout.window.addch(y, x, c, color)
+                self.layout.window.addstr(y, x, c, color)
                 x += 1
 
         if self.previousLength is not None:
