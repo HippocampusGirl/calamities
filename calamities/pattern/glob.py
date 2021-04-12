@@ -89,6 +89,8 @@ def _translate(pat, entities, parenttagdict):
 
     tokens = tokenize.split(pat)
 
+    entities_in_res = set()
+
     for token in tokens:
         if len(token) == 0:
             continue
@@ -120,7 +122,11 @@ def _translate(pat, entities, parenttagdict):
                 if enre is None or not _validate_re(enre):
                     enre = r"[^/]+"
 
-                res += r"(?P<%s>%s)" % (tag_name, enre)
+                if tag_name not in entities_in_res:
+                    res += r"(?P<%s>%s)" % (tag_name, enre)
+                    entities_in_res.add(tag_name)
+                else:
+                    res += r"(?P=%s)" % tag_name
             else:
                 res += re.escape(token)
 
