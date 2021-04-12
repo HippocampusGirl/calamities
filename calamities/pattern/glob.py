@@ -75,6 +75,15 @@ def get_entities_in_path(pat):
     return res
 
 
+def _validate_re(s):
+    try:
+        re.compile(s)
+        return True
+    except Exception:
+        pass
+    return False
+
+
 def _translate(pat, entities, parenttagdict):
     res = ""
 
@@ -100,13 +109,16 @@ def _translate(pat, entities, parenttagdict):
                     # TODO warning that filter is ignored
                     continue
 
-                enre = r"[^/]+"
+                enre = None
                 if filter_str is not None:
                     if filter_type == ":":
                         enre = filter_str.replace("\\{", "{").replace("\\}", "}")  # regex syntax
                     elif filter_type == "=":  # glob syntax
                         enre = fnmatch.translate(filter_str)
                         enre = special_match.sub("", enre)  # remove control codes
+
+                if enre is None or not _validate_re(enre):
+                    enre = r"[^/]+"
 
                 res += r"(?P<%s>%s)" % (tag_name, enre)
             else:
