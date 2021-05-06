@@ -14,7 +14,6 @@ from .re import (
     tag_parse,
     tokenize,
     magic_check,
-    recursive_check,
     special_match,
 )
 
@@ -25,16 +24,20 @@ def tag_glob(pathname, entities=None, dironly=False) -> Generator[Tuple[str, Dic
     """
     dirname, basename = op.split(pathname)
     if not dirname:
+        # print(repr(dirname), repr(basename))
         if _isrecursive(basename):
-            yield from _rlistdir(dirname, dironly)
+            dir_generator = _rlistdir(dirname, dironly)
         else:
-            yield from _iterdir(dirname, dironly)
+            dir_generator = _iterdir(dirname, dironly)
+        for dirname in dir_generator:
+            yield (dirname, dict())
         return
     if dirname != pathname and has_magic(dirname):
         dirs = tag_glob(dirname, entities, dironly=True)
     else:
-        dirs = [(dirname, {})]
+        dirs = [(dirname, dict())]
     for dirname, dirtagdict in dirs:
+        # print("40", repr(dirname), repr(dirtagdict))
         for name, tagdict in _tag_glob_in_dir(dirname, basename, entities, dironly, dirtagdict):
             yield (op.join(dirname, name), _combine_tagdict(dirtagdict, tagdict))
 
@@ -54,6 +57,7 @@ def _tag_glob_in_dir(dirname, basename, entities, dironly, parenttagdict):
     adapted from cpython glob
     only basename can contain magic
     """
+    # print("60", repr(dirname), repr(basename), repr(entities), repr(parenttagdict))
     assert not has_magic(dirname)
     match = _translate(basename, entities, parenttagdict)
     for x in _iterdir(dirname, dironly):
@@ -167,11 +171,12 @@ def _rlistdir(dirname, dironly):
     """
     adapted from cpython glob
     """
-    yield dirname
-    for x in _iterdir(dirname, dironly):
+    names = list(_iterdir(dirname, dironly))
+    for x in names:
         path = op.join(dirname, x) if dirname else x
-        for y in _rlistdir(path, dironly):
-            yield op.join(x, y)
+        yield path
+        # print("176", repr(dirname), repr(path))
+        yield from _rlistdir(path, dironly)
 
 
 def has_magic(s):
@@ -179,7 +184,7 @@ def has_magic(s):
 
 
 def _isrecursive(pattern):
-    return recursive_check.fullmatch(pattern) is not None
+    return pattern == "**"
 
 
 def _ishidden(path):

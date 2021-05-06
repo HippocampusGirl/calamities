@@ -5,13 +5,11 @@
 import re
 
 
-tag_parse = re.compile(r"{(?P<tag_name>[a-z]+)((?P<filter_type>[:=])(?P<filter>(?:[^{}]|\\{|\\})+))?}")
+tag_parse = re.compile(r"{(?P<tag_name>[a-z]+)((?P<filter_type>[:=])(?P<filter>(?:[^{}]|{\d+})+))?}")
 
-tokenize = re.compile(r"(\A|[^\\])({[a-z]+(?:[:=](?:[^{}]|\\{|\\})+)?})")
+tokenize = re.compile(r"(\A|[^\\])({[a-z]+(?:[:=](?:[^{}]|{\d+})+)?})")
 
 magic_check = re.compile(r"(?:\*|\?|(?:\A|[^\\]){|[^\\]})")
-
-recursive_check = re.compile(r"\*\*")
 
 special_match = re.compile(r"(\\[AbBdDsDwWZ])")
 
