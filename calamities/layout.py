@@ -8,7 +8,7 @@
 
 import curses
 
-basePadSize = 2 ** 10
+basePadSize = 2 ** 14
 
 
 class Layout:
