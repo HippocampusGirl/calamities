@@ -275,12 +275,12 @@ class MultiCombinedTextAndSingleChoiceInputView(MultiSingleChoiceInputView):
         }
 
         if not isinstance(values[0], list):
-            values = [[*values] for option in options]
+            values = [[*values] for _ in options]
 
         for i in range(len(values)):
             values[i].insert(0, "")
 
-        super(MultiCombinedTextAndSingleChoiceInputView, self).__init__(
+        super().__init__(
             options, values, addBrackets=True, **super_kwargs,
         )
 

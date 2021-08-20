@@ -5,6 +5,8 @@
 """
 
 """
+from typing import Optional, List, Dict
+
 from ..view import CallableView
 from ..keyboard import Key
 from ..text import Text, TextElement
@@ -23,21 +25,21 @@ class SingleChoiceInputView(CallableView):
         colorfun=None,
         **kwargs,
     ):
-        super(SingleChoiceInputView, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.isVertical = isVertical
         self.addBrackets = addBrackets
         self.showSelectionAfterExit = showSelectionAfterExit
 
-        self.cur_index = cur_index
-
-        self.label = label
-        self.options = None
-        self.set_options(options)
+        self.cur_index: Optional[int] = cur_index
 
         self.clearBeforeDrawSize = 0
         self.offset = 0
         self.renderfun = renderfun
         self.colorfun = colorfun
+
+        self.label = label
+        self.options: List = list()
+        self.set_options(options)
 
     def set_options(self, newoptions):
         self.offset = 0
@@ -347,7 +349,7 @@ class CombinedMultipleAndSingleChoiceInputView(MultipleChoiceInputView):
 
 class MultiSingleChoiceInputView(SingleChoiceInputView):
     def __init__(self, options, values, selectedIndices=None, addBrackets=True, **kwargs):
-        super(MultiSingleChoiceInputView, self).__init__(
+        super().__init__(
             options, isVertical=True, addBrackets=False, showSelectionAfterExit=False, **kwargs,
         )
         self.selectedIndices = selectedIndices
@@ -438,7 +440,7 @@ class MultiMultipleChoiceInputView(MultiSingleChoiceInputView):
 
         if checked is None:
             checked = [[] for _ in options]
-        self.checked = [
+        self.checked: List[Dict[str, bool]] = [
             {str(k): (str(k) in checked[i]) for k in self.values[i]} for i in range(len(options))
         ]
 
@@ -478,7 +480,7 @@ class MultiMultipleChoiceInputView(MultiSingleChoiceInputView):
         else:
             super(MultiSingleChoiceInputView, self)._handleKey(c)
 
-    def _getOutput(self):
+    def _getOutput(self) -> Optional[List[Dict[str, bool]]]:
         if self.cur_index is not None:
             return self.checked
 
